@@ -7,8 +7,6 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, mean_squared_error, r2_score, accuracy_score
 from sklearn.cluster import KMeans
-from keras.models import Sequential
-from keras.layers import Dense
 import openai
 
 # Streamlit Page Config
@@ -43,7 +41,7 @@ st.markdown(
 )
 
 st.title("🧠 Coursemon AutoML Lab")
-st.caption("Make classification, regression, clustering or deep learning models without writing code!")
+st.caption("Make classification, regression, or clustering models without writing code!")
 
 # GPT Business Tab
 tab1, tab2 = st.tabs(["📊 Model Builder", "🧠 Business Objective"])
@@ -85,8 +83,7 @@ with tab1:
         ml_type = st.selectbox("📌 Select Task Type", [
             "Supervised - Classification",
             "Supervised - Regression",
-            "Unsupervised - Clustering",
-            "Deep Learning (Binary)"
+            "Unsupervised - Clustering"
         ])
 
         model = None
@@ -103,40 +100,26 @@ with tab1:
             clusters = st.slider("Number of Clusters", 2, 10, 3)
             model = KMeans(n_clusters=clusters)
 
-        elif ml_type == "Deep Learning (Binary)":
-            model = Sequential()
-            model.add(Dense(64, activation='relu', input_dim=len(df.columns) - 1))
-            model.add(Dense(1, activation='sigmoid'))
-            model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-
         if st.button("🚀 Train Model"):
-            if ml_type.startswith("Supervised") or ml_type.startswith("Deep"):
+            if ml_type.startswith("Supervised"):
                 X = df.drop(columns=[target_column])
                 y = df[target_column]
 
                 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-                if ml_type.startswith("Supervised"):
-                    pipe = Pipeline([('scaler', StandardScaler()), ('model', model)])
-                    pipe.fit(X_train, y_train)
-                    preds = pipe.predict(X_test)
+                pipe = Pipeline([('scaler', StandardScaler()), ('model', model)])
+                pipe.fit(X_train, y_train)
+                preds = pipe.predict(X_test)
 
-                    if ml_type == "Supervised - Classification":
-                        st.success("✅ Classification Results")
-                        st.text(classification_report(y_test, preds))
-                        st.metric("Accuracy", round(accuracy_score(y_test, preds), 2))
+                if ml_type == "Supervised - Classification":
+                    st.success("✅ Classification Results")
+                    st.text(classification_report(y_test, preds))
+                    st.metric("Accuracy", round(accuracy_score(y_test, preds), 2))
 
-                    elif ml_type == "Supervised - Regression":
-                        st.success("✅ Regression Results")
-                        st.metric("MSE", round(mean_squared_error(y_test, preds), 2))
-                        st.metric("R2 Score", round(r2_score(y_test, preds), 2))
-
-                elif ml_type == "Deep Learning (Binary)":
-                    model.fit(X_train, y_train, epochs=10, verbose=0)
-                    loss, acc = model.evaluate(X_test, y_test, verbose=0)
-                    st.success("✅ Deep Learning Results")
-                    st.metric("Accuracy", round(acc, 2))
-                    st.metric("Loss", round(loss, 2))
+                elif ml_type == "Supervised - Regression":
+                    st.success("✅ Regression Results")
+                    st.metric("MSE", round(mean_squared_error(y_test, preds), 2))
+                    st.metric("R2 Score", round(r2_score(y_test, preds), 2))
 
             elif ml_type == "Unsupervised - Clustering":
                 X = df.copy()
